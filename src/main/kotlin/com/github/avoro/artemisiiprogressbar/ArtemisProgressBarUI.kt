@@ -111,6 +111,9 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
             }
 
         val ROCKET_PIXELS: List<Pixel> = parseRows(ROCKET_ROWS, CHAR_MAP)
+        val ROCKET_TOP_SRB: List<Pixel> = ROCKET_PIXELS.filter { it.y in 1..3 }
+        val ROCKET_CORE: List<Pixel>    = ROCKET_PIXELS.filter { it.y in 4..9 }
+        val ROCKET_BOT_SRB: List<Pixel> = ROCKET_PIXELS.filter { it.y in 10..12 }
         val MOON_PIXELS: List<Pixel> = parseRows(MOON_ROWS, MOON_MAP)
 
         data class Star(val nx: Double, val ny: Double, val color: Color, val twinkle: Boolean, val phase: Int)
@@ -216,9 +219,43 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         val travelNw = nw - MOON_W - ROCKET_W - 2
         val rocketX = (travelNw * progress).toInt().coerceAtLeast(0)
         val rocketY = (NATIVE_H - ROCKET_H) / 2
-        for (p in ROCKET_PIXELS) {
-            g.color = p.color
-            g.fillRect((rocketX + p.x) * ps, (rocketY + p.y) * ps, ps, ps)
+
+        when {
+            progress < 0.5 -> {
+                for (p in ROCKET_PIXELS) {
+                    g.color = p.color
+                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y) * ps, ps, ps)
+                }
+            }
+            progress < 0.75 -> {
+                val sep = ((progress - 0.5) / 0.25).toFloat()
+                val srbOffset = (sep * 5).toInt()
+                val srbAlpha = 1.0f - sep
+
+                // Core stays in place
+                for (p in ROCKET_CORE) {
+                    g.color = p.color
+                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y) * ps, ps, ps)
+                }
+
+                // SRBs drift outward and fade
+                g.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, srbAlpha)
+                for (p in ROCKET_TOP_SRB) {
+                    g.color = p.color
+                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y - srbOffset) * ps, ps, ps)
+                }
+                for (p in ROCKET_BOT_SRB) {
+                    g.color = p.color
+                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y + srbOffset) * ps, ps, ps)
+                }
+                g.composite = AlphaComposite.SrcOver
+            }
+            else -> {
+                for (p in ROCKET_CORE) {
+                    g.color = p.color
+                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y) * ps, ps, ps)
+                }
+            }
         }
     }
 
@@ -234,8 +271,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
     override fun paintIndeterminate(g: Graphics, c: JComponent) {
         val g2 = g.create() as Graphics2D
         try {
-            val t = (frame % 120) / 120.0
-            val p = if (t < 0.5) t * 2.0 else (1.0 - t) * 2.0
+            val p = (frame % 120) / 120.0
             paintScene(g2, c.width, c.height, p)
         } finally {
             g2.dispose()
