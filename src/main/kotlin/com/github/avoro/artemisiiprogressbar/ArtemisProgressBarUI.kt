@@ -18,7 +18,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         fun createUI(c: JComponent): ArtemisProgressBarUI = ArtemisProgressBarUI()
 
         private const val NATIVE_H = 20
-        private const val ROCKET_W = 40
+        private const val ROCKET_W = 38
         private const val ROCKET_H = 14
         private const val MOON_W = 22
         private const val MOON_H = 20
@@ -149,7 +149,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
             frame = (frame + 1) % 3600
             progressBar?.repaint()
         }
-        timer!!.start()
+        timer?.start()
     }
 
     override fun uninstallUI(c: JComponent) {
@@ -165,7 +165,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         // suppress text rendering over pixel art
     }
 
-    private fun paintScene(g: Graphics2D, width: Int, height: Int, progress: Double) {
+    private fun paintScene(g: Graphics2D, width: Int, height: Int, progress: Double, indeterminate: Boolean = false) {
         val ps = maxOf(1, height / NATIVE_H)
         val nw = width / ps
 
@@ -221,7 +221,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         val rocketY = (NATIVE_H - ROCKET_H) / 2
 
         when {
-            progress < 0.5 -> {
+            indeterminate || progress < 0.5 -> {
                 for (p in ROCKET_PIXELS) {
                     g.color = p.color
                     g.fillRect((rocketX + p.x) * ps, (rocketY + p.y) * ps, ps, ps)
@@ -238,15 +238,16 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
                     g.fillRect((rocketX + p.x) * ps, (rocketY + p.y) * ps, ps, ps)
                 }
 
-                // SRBs drift outward and fade
+                // SRBs fall back and drift outward, then fade
+                val srbBackOffset = (sep * 8).toInt()
                 g.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, srbAlpha)
                 for (p in ROCKET_TOP_SRB) {
                     g.color = p.color
-                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y - srbOffset) * ps, ps, ps)
+                    g.fillRect((rocketX + p.x - srbBackOffset) * ps, (rocketY + p.y - srbOffset) * ps, ps, ps)
                 }
                 for (p in ROCKET_BOT_SRB) {
                     g.color = p.color
-                    g.fillRect((rocketX + p.x) * ps, (rocketY + p.y + srbOffset) * ps, ps, ps)
+                    g.fillRect((rocketX + p.x - srbBackOffset) * ps, (rocketY + p.y + srbOffset) * ps, ps, ps)
                 }
                 g.composite = AlphaComposite.SrcOver
             }
@@ -262,7 +263,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
     override fun paintDeterminate(g: Graphics, c: JComponent) {
         val g2 = g.create() as Graphics2D
         try {
-            paintScene(g2, c.width, c.height, progressBar.percentComplete)
+            paintScene(g2, c.width, c.height, progressBar.percentComplete, indeterminate = false)
         } finally {
             g2.dispose()
         }
@@ -272,7 +273,7 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         val g2 = g.create() as Graphics2D
         try {
             val p = (frame % 120) / 120.0
-            paintScene(g2, c.width, c.height, p)
+            paintScene(g2, c.width, c.height, p, indeterminate = true)
         } finally {
             g2.dispose()
         }
