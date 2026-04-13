@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [0.0.2]
+### Added
+- Plugin icon (40×40px SVG) matching the progress bar aesthetic
+- Animated exhaust flame behind the rocket with 3-state flicker
+
 ## [0.0.1]
 ### Added
 - Pixel-art Artemis II SLS rocket progress bar replacing IntelliJ's default
