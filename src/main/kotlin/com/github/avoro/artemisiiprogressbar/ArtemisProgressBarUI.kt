@@ -50,6 +50,10 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         private val NOZ_D = Color(0x383848)
         private val FILL1 = Color(0x2a4a7a)
         private val FILL2 = Color(0x3868a8)
+        private val FLAME1 = Color(0xa03010)
+        private val FLAME2 = Color(0xd05818)
+        private val FLAME3 = Color(0xe88020)
+        private val FLAME4 = Color(0xf0b030)
 
         private val CHAR_MAP = mapOf(
             'T' to TIP,   'P' to WH1,  'p' to WH2,  'Q' to CAP_D,
@@ -219,6 +223,18 @@ class ArtemisProgressBarUI : BasicProgressBarUI() {
         val travelNw = nw - MOON_W - ROCKET_W - 2
         val rocketX = (travelNw * progress).toInt().coerceAtLeast(0)
         val rocketY = (NATIVE_H - ROCKET_H) / 2
+
+        // Flame: drawn behind rocket, flickers with frame
+        val flicker = frame % 3
+        val nozzleX = rocketX + 11
+        g.color = FLAME1
+        g.fillRect((nozzleX - (5 + flicker)) * ps, (rocketY + 6) * ps, (5 + flicker) * ps, 2 * ps)
+        g.color = FLAME2
+        g.fillRect((nozzleX - (3 + flicker / 2)) * ps, (rocketY + 5) * ps, (3 + flicker / 2) * ps, 4 * ps)
+        g.color = FLAME3
+        g.fillRect((nozzleX - 3) * ps, (rocketY + 6) * ps, 3 * ps, 2 * ps)
+        g.color = FLAME4
+        g.fillRect((nozzleX - (1 + flicker % 2)) * ps, (rocketY + 6) * ps, (1 + flicker % 2) * ps, 2 * ps)
 
         when {
             indeterminate || progress < 0.5 -> {
